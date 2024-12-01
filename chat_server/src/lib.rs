@@ -1,20 +1,27 @@
 mod config;
+mod error;
 mod handlers;
-pub use handlers::*;
+mod models;
 
+use handlers::*;
 use std::{ops::Deref, sync::Arc};
 
+pub use error::AppError;
+pub use models::User;
+
 use axum::{
-    routing::{get, patch},
+    routing::{get, patch, post},
     Router,
 };
+
 pub use config::AppConfig;
 
 #[derive(Debug, Clone)]
 pub(crate) struct AppState {
-    pub(crate) inner: Arc<AppStateInner>,
+    inner: Arc<AppStateInner>,
 }
 
+#[allow(unused)]
 #[derive(Debug)]
 pub(crate) struct AppStateInner {
     pub(crate) config: AppConfig,
@@ -22,9 +29,10 @@ pub(crate) struct AppStateInner {
 
 pub fn get_router(config: AppConfig) -> Router {
     let state = AppState::new(config);
+
     let api = Router::new()
-        .route("/signin", get(signin_handler))
-        .route("/signup", get(signup_handler))
+        .route("/signin", post(signin_handler))
+        .route("/signup", post(signup_handler))
         .route("/chat", get(list_chat_handler).post(create_chat_handler))
         .route(
             "/chat/:id",
@@ -40,7 +48,7 @@ pub fn get_router(config: AppConfig) -> Router {
         .with_state(state)
 }
 
-// 调用 state.config => state.inner.config
+// 当我调用 state.config => state.inner.config
 impl Deref for AppState {
     type Target = AppStateInner;
 
