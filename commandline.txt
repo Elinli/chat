@@ -57,4 +57,26 @@ GRANT ALL PRIVILEGES ON DATABASE testdb TO test;
 \duS
 
 pgcli连接
-pgcli -h localhost -p 5432 -U eli chat
+pgcli -h localhost -p 5432 -U postgres chat
+
+创建数据库
+sqlx database create
+
+初始化数据库
+sqlx migrate add initial
+sqlx migrate run
+
+
+密码hash转换
+crate:argon2
+
+
+
+使用 OpenSSL 和 PEM 导入私钥创建 RSA 密钥对
+openssl genrsa -out private.pem 2048
+openssl rsa -in private.pem -outform PEM -pubout -out public.pem
+
+
+ed25519 密钥对
+openssl genpkey -algorithm ed25519 -out private.pem
+openssl pkey -in private.key -pubout -out public.pem

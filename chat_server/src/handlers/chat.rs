@@ -1,7 +1,9 @@
 use axum::response::IntoResponse;
+use tracing::info;
 
 // list
 pub(crate) async fn list_chat_handler() -> impl IntoResponse {
+    info!("get here and process is successful");
     "list chat".to_string()
 }
 // create

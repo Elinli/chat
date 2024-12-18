@@ -1,0 +1,28 @@
+### api test
+GET http://localhost:6688/api/chat
+
+### signup user
+POST http://localhost:6688/api/signup
+Content-Type: application/json
+
+{
+    "fullname": "Eli Shi",
+    "email": "elixy@qq.com",
+    "password": "pwd25"
+}
+### signin user
+
+# @name signin
+POST http://localhost:6688/api/signin
+Content-Type: application/json
+
+{
+    "email": "elixy@qq.com",
+    "password": "pwd25"
+}
+
+@token = {{ signin.response.body.token }}
+
+### get chat list
+GET http://localhost:6688/api/chat
+Authorization: Bearer {{ token }}

@@ -1,4 +1,5 @@
 -- Add migration script here
+-- Add migration script here
 -- create user table
 CREATE TABLE IF NOT EXISTS users(
   id bigserial PRIMARY KEY,
