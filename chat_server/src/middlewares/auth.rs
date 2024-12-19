@@ -55,7 +55,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_auth_middleware() ->Result<()>{
+    async fn test_auth_middleware() -> Result<()> {
         let config = AppConfig::load()?;
         let (_tdb, state) = AppState::new_for_test(config).await?;
 

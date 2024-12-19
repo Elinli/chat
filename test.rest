@@ -1,33 +1,68 @@
-### api test
-GET http://localhost:6688/api/chat
-
 ### signup user
+
 POST http://localhost:6688/api/signup
 Content-Type: application/json
 
 {
-    "fullname": "Eli Shi",
-    "email": "elixy@qq.com",
-    "password": "pwd25"
+    "workspace": "acme",
+    "fullname": "Tyr Chen",
+    "email": "tchen@acme.org",
+    "password": "123456"
 }
-### signin user
+
+### signup user
+
+POST http://localhost:6688/api/signup
+Content-Type: application/json
+
+{
+    "workspace": "acme",
+    "fullname": "Alice Chen",
+    "email": "alice@acme.org",
+    "password": "123456"
+}
+
+### signin user (valid)
+
+POST http://localhost:6688/api/signin
+Content-Type: application/json
+
+{
+    "email": "tchen@acme.org",
+    "password": "123456"
+}
+
+### signin user (invalid)
 
 # @name signin
 POST http://localhost:6688/api/signin
 Content-Type: application/json
 
 {
-    "email": "elixy@qq.com",
-    "password": "pwd25"
+    "email": "tchen@acme.org",
+    "password": "123456"
 }
 
-@token = {{ signin.response.body.token }}
+@token = {{signin.response.body.token}}
+
+### create chat
+POST http://localhost:6688/api/chats
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "name": "acme",
+    "members": [1, 2],
+    "public": false
+}
+
 
 ### get chat list
-GET http://localhost:6688/api/chat
-Authorization: Bearer {{ token }}
 
+GET http://localhost:6688/api/chats
+Authorization: Bearer {{token}}
 
-### post chat create
-POST http://localhost:6688/api/chat/6
-Authorization: Bearer {{ token }}
+### get user list
+
+GET http://localhost:6688/api/users
+Authorization: Bearer {{token}}

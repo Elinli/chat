@@ -52,7 +52,7 @@ mod tests {
     async fn signup_should_work() -> Result<()> {
         let config = AppConfig::load()?;
         let (_tdb, state) = AppState::new_for_test(config).await?;
-        let input = CreateUser::new("Eli Shi", "elixy@qq.com", "pwd25");
+        let input = CreateUser::new("Eli Shi", "eli@qq.com", "pwd25", "none");
         let ret = signup_handler(State(state), Json(input))
             .await?
             .into_response();
@@ -66,7 +66,7 @@ mod tests {
     async fn signup_with_existed_email() -> Result<()> {
         let config = AppConfig::load()?;
         let (_tdb, state) = AppState::new_for_test(config).await?;
-        let input = CreateUser::new("Ren Yao", "renyao@qq.com", "pwd26");
+        let input = CreateUser::new("Ren Yao", "renyao@qq.com", "pwd26", "none");
         signup_handler(State(state.clone()), Json(input.clone())).await?;
         let ret = signup_handler(State(state.clone()), Json(input.clone()))
             .await
@@ -80,13 +80,13 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_signin() -> Result<()> {
+    async fn signin_should_work() -> Result<()> {
         let config = AppConfig::load()?;
         let (_tdb, state) = AppState::new_for_test(config).await?;
         let name = "Alice";
-        let email = "alice@acme.org";
+        let email = "ali@acme.org";
         let password = "Hunter42";
-        let user = CreateUser::new(name, email, password);
+        let user = CreateUser::new(name, email, password, "none");
         User::create(&user, &state.pool).await?;
         let input = SigninUser::new(email, password);
         let ret = signin_handler(State(state), Json(input))
@@ -104,7 +104,7 @@ mod tests {
     async fn signin_with_non_exist_user_should_403() -> Result<()> {
         let config = AppConfig::load()?;
         let (_tdb, state) = AppState::new_for_test(config).await?;
-        let email = "alice@acme.org";
+        let email = "ali@acme.org";
         let password = "Hunter42";
         let input = SigninUser::new(email, password);
         let ret = signin_handler(State(state), Json(input))
