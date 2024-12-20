@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Multipart, Path, State},
+    extract::{Multipart, Path, Query, State},
     http::{self, HeaderMap},
     response::IntoResponse,
     Extension, Json,
@@ -7,16 +7,28 @@ use axum::{
 use tokio::fs;
 use tracing::warn;
 
-use crate::{models::ChatFile, AppError, AppState, User};
+use crate::{models::{ChatFile, CreateMessage, ListMessages}, AppError, AppState, User};
 
 // send
-pub(crate) async fn send_message_handler() -> impl IntoResponse {
-    "send message".to_string()
+pub(crate) async fn send_message_handler(
+    Extension(user): Extension<User>,
+    State(state): State<AppState>,
+    Path(id):Path<u64>,
+    Json(input): Json<CreateMessage>,
+) ->Result< impl IntoResponse,AppError> {
+    let msg = state.create_message(input, id, user.id as _).await?;
+
+    Ok(Json(msg))
 }
 
 // list
-pub(crate) async fn list_message_handler() -> impl IntoResponse {
-    "list message".to_string()
+pub(crate) async fn list_message_handler(
+    State(state): State<AppState>,
+    Path(id): Path<u64>,
+    Query(input): Query<ListMessages>,
+) -> Result<impl IntoResponse, AppError> {
+    let messages = state.list_messages(input, id).await?;
+    Ok(Json(messages))
 }
 
 //  upload file
@@ -35,7 +47,7 @@ pub(crate) async fn upload_file_handler(
             warn!("Failed to read multipart field");
             continue;
         };
-        let file = ChatFile::new(&filename, &file_data);
+        let file = ChatFile::new(ws_id, &filename, &file_data);
         let path = file.path(&base_dir);
         if path.exists() {
             warn!("File {} already exists: {:?}", filename, path);
@@ -43,7 +55,7 @@ pub(crate) async fn upload_file_handler(
             fs::create_dir_all(path.parent().expect("file path parent should exists")).await?;
             fs::write(path, file_data).await?;
         }
-        files.push(file.url(ws_id));
+        files.push(file.url());
     }
     Ok(Json(files))
 }

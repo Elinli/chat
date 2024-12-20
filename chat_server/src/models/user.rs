@@ -23,7 +23,7 @@ pub struct SigninUser {
 
 impl AppState {
     /// Find a user by email
-    pub async fn find_by_email(&self, email: &str) -> Result<Option<User>, AppError> {
+    pub async fn find_user_by_email(&self, email: &str) -> Result<Option<User>, AppError> {
         let user = sqlx::query_as(
             "SELECT id, ws_id, fullname, email, created_at FROM users WHERE email = $1",
         )
@@ -32,10 +32,18 @@ impl AppState {
         .await?;
         Ok(user)
     }
+    // find user by id
+    pub async fn find_user_by_id(&self, id: u64) -> Result<Option<User>, AppError> {
+        let user = sqlx::query_as("SELECT id, ws_id, fullname, email, created_at FROM users WHERE id = $1")
+            .bind(id as i64)
+            .fetch_optional(&self.pool)
+            .await?;
+        Ok(user)
+    }
 
     /// Create a new user
     pub async fn create_user(&self, input: &CreateUser) -> Result<User, AppError> {
-        let user = self.find_by_email(&input.email).await?;
+        let user = self.find_user_by_email(&input.email).await?;
 
         if user.is_some() {
             return Err(AppError::EmailAlreadyExists(input.email.clone()));
@@ -218,7 +226,7 @@ mod tests {
         assert_eq!(user.fullname, input.fullname);
         // assert!(user.id > 0);
 
-        let user = state.find_by_email("elixy@qq.com").await?;
+        let user = state.find_user_by_email("elixy@qq.com").await?;
         assert!(user.is_some());
         let user = user.unwrap();
         assert_eq!(user.email, input.email);

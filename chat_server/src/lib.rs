@@ -6,13 +6,14 @@ mod models;
 mod utils;
 
 use anyhow::Context;
-pub use error::AppError;
 use handlers::*;
-use middlewares::{setup_layer, verify_token};
-pub use models::User;
+use middlewares::{setup_layer, verify_chat, verify_token};
 use sqlx::PgPool;
-use tokio::fs;
 use std::{fmt, ops::Deref, sync::Arc};
+use tokio::fs;
+
+pub use error::{AppError, ErrorOutput};
+pub use models::*;
 
 use utils::{DecodingKey, EncodingKeyPair};
 
@@ -40,18 +41,22 @@ pub(crate) struct AppStateInner {
 pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
     let state = AppState::try_new(config).await?;
 
-    let api = Router::new()
-        .route("/users", get(list_chat_users_handler))
-        .route("/allusers", get(list_all_users_handler))
-        .route("/chats", get(list_chat_handler).post(create_chat_handler))
+    let chat = Router::new()
         .route(
-            "/chats/:id",
+            "/:id",
             get(get_chat_handler)
                 .patch(update_chat_handler)
                 .delete(delete_chat_handler)
                 .post(send_message_handler),
         )
-        .route("/chat/:id/messages", get(list_message_handler))
+        .route("/:id/messages", get(list_message_handler))
+        .layer(from_fn_with_state(state.clone(), verify_chat))
+        .route("/", get(list_chat_handler).post(create_chat_handler));
+
+    let api = Router::new()
+        .route("/users", get(list_chat_users_handler))
+        .route("/allusers", get(list_all_users_handler))
+        .nest("/chats", chat)
         .route("/upload", post(upload_file_handler))
         .route("/files/:ws_id/*path", get(download_file_handler))
         .layer(from_fn_with_state(state.clone(), verify_token))

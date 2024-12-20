@@ -1,16 +1,18 @@
 mod chat;
+mod file;
+mod messages;
 mod user;
 mod workspace;
-mod file;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
 pub use chat::CreateChat;
+pub use messages::{CreateMessage, ListMessages};
 pub use user::{CreateUser, SigninUser};
 
-#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq)]
 pub struct User {
     pub id: i64,
     pub ws_id: i64,
@@ -22,7 +24,7 @@ pub struct User {
     pub created_at: DateTime<Utc>,
 }
 
-#[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq)]
 pub struct Workspace {
     pub id: i64,
     pub name: String,
@@ -45,6 +47,7 @@ pub enum ChatType {
     PrivateChannel,
     PublicChannel,
 }
+
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq)]
 pub struct Chat {
     pub id: i64,
@@ -54,8 +57,20 @@ pub struct Chat {
     pub members: Vec<i64>,
     pub created_at: DateTime<Utc>,
 }
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChatFile {
-    pub ext: String,
+    pub ws_id: u64,
+    pub ext: String, // extract ext from filename or mime type
     pub hash: String,
+}
+
+#[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq)]
+pub struct Message {
+    pub id: i64,
+    pub chat_id: i64,
+    pub sender_id: i64,
+    pub content: String,
+    pub files: Vec<String>,
+    pub created_at: DateTime<Utc>,
 }

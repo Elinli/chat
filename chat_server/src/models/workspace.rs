@@ -40,7 +40,7 @@ impl AppState {
         Ok(ws)
     }
 
-    pub async fn find_users_by_ws_id(id: u64, pool: &PgPool) -> Result<Vec<ChatUser>, AppError> {
+    pub async fn find_users_by_ws_id(&self, id: u64) -> Result<Vec<ChatUser>, AppError> {
         let users = sqlx::query_as(
             r#"
         SELECT id, fullname, email
@@ -49,7 +49,7 @@ impl AppState {
         "#,
         )
         .bind(id as i64)
-        .fetch_all(pool)
+        .fetch_all(&self.pool)
         .await?;
 
         Ok(users)
@@ -125,7 +125,12 @@ mod tests {
         let (_tdb, state) = AppState::new_for_test().await?;
         let ws = state.create_workspace("demo", 0).await?;
         let user = state
-            .create_user(&CreateUser::new("Eli X Shi", "elixyY@qq.com", "pwd25", "demo"))
+            .create_user(&CreateUser::new(
+                "Eli X Shi",
+                "elixyY@qq.com",
+                "pwd25",
+                "demo",
+            ))
             .await?;
         let ws = ws.update_owner(user.id as _, &state.pool).await?;
         assert_eq!(ws.owner_id, 1);
@@ -154,6 +159,14 @@ mod tests {
         assert_eq!(ws.owner_id, 1);
         assert_eq!(2, mem_user1.id);
         assert_eq!(3, mem_user2.id);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn fetch_users_by_ws_id_should_work() -> Result<()> {
+        let (_tdb, state) = AppState::new_for_test().await?;
+        let user = state.find_users_by_ws_id(1).await?;
+        assert_eq!(user.len(), 5);
         Ok(())
     }
 }

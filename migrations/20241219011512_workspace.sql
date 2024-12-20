@@ -32,3 +32,7 @@ COMMIT;
 -- alter user table to make ws_id not null
 ALTER TABLE users
   ALTER COLUMN ws_id SET NOT NULL;
+
+
+
+  
