@@ -110,15 +110,12 @@ impl ChatUser {
         Ok(users)
     }
 
-    pub async fn fetch_all(ws_id: u64, pool: &PgPool) -> Result<Vec<Self>, AppError> {
+    pub async fn fetch_all(pool: &PgPool) -> Result<Vec<Self>, AppError> {
         let users = sqlx::query_as(
             r#"
-        SELECT id, fullname, email
-        FROM users
-        WHERE ws_id = $1
+        SELECT id, email, fullname FROM users
         "#,
         )
-        .bind(ws_id as i64)
         .fetch_all(pool)
         .await?;
         Ok(users)

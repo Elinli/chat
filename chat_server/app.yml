@@ -1,6 +1,7 @@
 server:
   port: 6688
   db_url: postgres://postgres:admin@localhost:5432/chat
+  base_dir: /workspace/upload/chat_server
 auth: 
   sk: |
     -----BEGIN PRIVATE KEY-----

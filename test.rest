@@ -21,6 +21,17 @@ Content-Type: application/json
     "email": "alice@acme.org",
     "password": "123456"
 }
+### signup user
+
+POST http://localhost:6688/api/signup
+Content-Type: application/json
+
+{
+    "workspace": "huawei",
+    "fullname": "Huawei Yu",
+    "email": "huawei@acme.org",
+    "password": "123456"
+}
 
 ### signin user (valid)
 
@@ -51,18 +62,53 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-    "name": "acme",
-    "members": [1, 2],
+    "name": "test",
+    "members": [1, 2, 3],
     "public": false
 }
-
 
 ### get chat list
 
 GET http://localhost:6688/api/chats
 Authorization: Bearer {{token}}
 
+### get one chat
+
+GET http://localhost:6688/api/chats/1
+Authorization: Bearer {{token}}
+
 ### get user list
 
 GET http://localhost:6688/api/users
 Authorization: Bearer {{token}}
+
+### get all chat user list
+
+GET http://localhost:6688/api/allusers
+Authorization: Bearer {{token}}
+
+
+### upload files
+
+POST http://localhost:6688/api/upload
+Authorization: Bearer {{token}}
+Content-Type: multipart/form-data; boundary=MyBoundary
+
+--MyBoundary
+Content-Disposition: form-data; filename="y1.jpg"
+Content-Type: application/octet-stream
+
+< E:\y\y1.jpg
+--MyBoundary
+Content-Disposition: form-data; filename="hello.txt"
+Content-Type: text/plain
+
+Hello, World!
+--MyBoundary--
+
+
+### get files
+
+GET http://localhost:6688/api/files/1/a0506e/9aefba/d237dcddd193ab39139915312a38.jpg
+Authorization: Bearer {{token}}
+

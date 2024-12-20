@@ -1,13 +1,14 @@
+mod chat;
 mod user;
 mod workspace;
-mod chat;
+mod file;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
-pub use user::{CreateUser, SigninUser};
 pub use chat::CreateChat;
+pub use user::{CreateUser, SigninUser};
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize)]
 pub struct User {
@@ -29,7 +30,6 @@ pub struct Workspace {
     pub created_at: DateTime<Utc>,
 }
 
-
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq)]
 pub struct ChatUser {
     pub id: i64,
@@ -37,13 +37,13 @@ pub struct ChatUser {
     pub email: String,
 }
 
-#[derive(Debug, Clone,  Serialize, Deserialize, PartialEq,PartialOrd,sqlx::Type)]
-#[sqlx(type_name="chat_type",rename_all = "snake_case")]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, PartialOrd, sqlx::Type)]
+#[sqlx(type_name = "chat_type", rename_all = "snake_case")]
 pub enum ChatType {
-   Single,
-   Group,
-   PrivateChannel,
-   PublicChannel,
+    Single,
+    Group,
+    PrivateChannel,
+    PublicChannel,
 }
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq)]
 pub struct Chat {
@@ -54,6 +54,8 @@ pub struct Chat {
     pub members: Vec<i64>,
     pub created_at: DateTime<Utc>,
 }
-
-
-
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChatFile {
+    pub ext: String,
+    pub hash: String,
+}
