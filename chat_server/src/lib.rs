@@ -11,6 +11,7 @@ use handlers::*;
 use middlewares::{setup_layer, verify_token};
 pub use models::User;
 use sqlx::PgPool;
+use tokio::fs;
 use std::{fmt, ops::Deref, sync::Arc};
 
 use utils::{DecodingKey, EncodingKeyPair};
@@ -41,17 +42,18 @@ pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
 
     let api = Router::new()
         .route("/users", get(list_chat_users_handler))
-        .route("/allusers",get(list_all_chat_users_handler))
+        .route("/allusers", get(list_all_users_handler))
         .route("/chats", get(list_chat_handler).post(create_chat_handler))
         .route(
             "/chats/:id",
-            get(get_chat_handler).patch(update_chat_handler)
+            get(get_chat_handler)
+                .patch(update_chat_handler)
                 .delete(delete_chat_handler)
                 .post(send_message_handler),
         )
         .route("/chat/:id/messages", get(list_message_handler))
-        .route("/upload",post(upload_file_handler))
-        .route("/files/:ws_id/*path",get(download_file_handler))
+        .route("/upload", post(upload_file_handler))
+        .route("/files/:ws_id/*path", get(download_file_handler))
         .layer(from_fn_with_state(state.clone(), verify_token))
         .route("/signin", post(signin_handler))
         .route("/signup", post(signup_handler));
@@ -74,7 +76,12 @@ impl Deref for AppState {
 
 impl AppState {
     pub async fn try_new(config: AppConfig) -> Result<Self, AppError> {
+        fs::create_dir_all(&config.server.base_dir)
+            .await
+            .context("create base_dir failed")?;
+
         let dk = DecodingKey::load(&config.auth.pk).context("load public key failed")?;
+
         let ek = EncodingKeyPair::load(&config.auth.sk).context("load private key failed")?;
 
         let pool = PgPool::connect(&config.server.db_url)
@@ -106,16 +113,19 @@ mod test_util {
     use sqlx_db_tester::TestPg;
 
     impl AppState {
-        pub async fn new_for_test(
-            config: AppConfig,
-        ) -> Result<(sqlx_db_tester::TestPg, Self), AppError> {
+        pub async fn new_for_test() -> Result<(TestPg, Self), AppError> {
+            let config = AppConfig::load()?;
+
             let dk = DecodingKey::load(&config.auth.pk).context("load pk failed")?;
+
             let ek = EncodingKeyPair::load(&config.auth.sk).context("load sk failed")?;
-            // let server_url = config.server.db_url.split('/').next().unwrap();
-            // println!("server_url: {}", server_url);
+
             let post = config.server.db_url.rfind('/').expect("invalid db_url");
+
             let server_url = &config.server.db_url[..post];
+
             let (tdb, pool) = get_test_pool(Some(server_url)).await;
+
             let state = Self {
                 inner: Arc::new(AppStateInner {
                     config,

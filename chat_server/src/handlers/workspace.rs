@@ -1,7 +1,7 @@
 use axum::{extract::State, response::IntoResponse, Extension, Json};
 
 use crate::{
-    models::{ChatUser, Workspace},
+
     AppError, AppState, User,
 };
 
@@ -9,13 +9,14 @@ pub(crate) async fn list_chat_users_handler(
     Extension(user): Extension<User>,
     State(state): State<AppState>,
 ) -> Result<impl IntoResponse, AppError> {
-    let users = Workspace::find_all_chat_users(user.ws_id as _, &state.pool).await?;
+    let users = state.fetch_chat_users_by_ws_id(user.ws_id as _).await?;
     Ok(Json(users))
 }
 
-pub(crate) async fn list_all_chat_users_handler(
+pub(crate) async fn list_all_users_handler(
     State(state): State<AppState>,
 ) -> Result<impl IntoResponse, AppError> {
-    let chats = ChatUser::fetch_all(&state.pool).await?;
+    let chats = state.fetch_all_users().await?;
     Ok(Json(chats))
 }
+
