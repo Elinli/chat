@@ -136,3 +136,8 @@ Authorization: Bearer {{token}}
 
 GET http://localhost:6688/api/chats/2/messages?limit=10
 Authorization: Bearer {{token}}
+
+### get messages
+
+GET http://localhost:6688/api/chats/1/messages?limit=1000
+Authorization: Bearer {{token}}

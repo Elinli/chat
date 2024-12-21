@@ -4,7 +4,6 @@ use std::{
 };
 
 use sha1::{Digest, Sha1};
-use tracing::info;
 
 use crate::AppError;
 
