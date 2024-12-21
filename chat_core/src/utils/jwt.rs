@@ -41,7 +41,6 @@ impl DecodingKey {
         };
 
         let claims = self.0.verify_token::<User>(token, Some(options))?;
-        println!("{:?}", claims);
         Ok(claims.custom)
     }
 }

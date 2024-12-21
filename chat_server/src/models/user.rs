@@ -20,6 +20,7 @@ pub struct SigninUser {
     pub password: String,
 }
 
+#[allow(dead_code)]
 impl AppState {
     /// Find a user by email
     pub async fn find_user_by_email(&self, email: &str) -> Result<Option<User>, AppError> {
