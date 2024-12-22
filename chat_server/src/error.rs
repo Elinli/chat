@@ -3,6 +3,7 @@ use axum::response::{IntoResponse, Json};
 use axum::{http::StatusCode, response::Response};
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use utoipa::ToSchema;
 #[derive(Error, Debug)]
 pub enum AppError {
     #[error("sql error: {0}")]
@@ -36,7 +37,7 @@ pub enum AppError {
     ChatFileError(String),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, ToSchema, Deserialize)]
 pub struct ErrorOutput {
     pub error: String,
 }
@@ -61,7 +62,7 @@ impl IntoResponse for AppError {
             Self::NotFound(_) => StatusCode::NOT_FOUND,
             Self::IoError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             Self::CreateMessageError(_) => StatusCode::BAD_REQUEST,
-            Self::ChatFileError(_)=> StatusCode::BAD_REQUEST,
+            Self::ChatFileError(_) => StatusCode::BAD_REQUEST,
         };
 
         (status, Json(ErrorOutput::new(self.to_string()))).into_response()

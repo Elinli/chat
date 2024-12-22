@@ -3,18 +3,22 @@ mod error;
 mod handlers;
 mod middlewares;
 mod models;
+mod openapi;
 
 use anyhow::Context;
-use chat_core::{middlewares::{set_layer, verify_token, TokenVerify}, DecodingKey, EncodingKeyPair, User};
+use chat_core::{
+    middlewares::{set_layer, verify_token, TokenVerify},
+    DecodingKey, EncodingKeyPair, User,
+};
 use handlers::*;
 use middlewares::verify_chat;
+use openapi::OpenApiCustomRouter;
 use sqlx::PgPool;
 use std::{fmt, ops::Deref, sync::Arc};
 use tokio::fs;
 
 pub use error::{AppError, ErrorOutput};
 pub use models::*;
-
 
 use axum::{
     middleware::from_fn_with_state,
@@ -61,6 +65,7 @@ pub async fn get_router(state: AppState) -> Result<Router, AppError> {
         .route("/signup", post(signup_handler));
 
     let app = Router::new()
+        .openapi()
         .route("/", get(index_handler))
         .nest("/api", api)
         .with_state(state);
