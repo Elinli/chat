@@ -62,9 +62,9 @@ Content-Type: application/json
 Authorization: Bearer {{token}}
 
 {
-    "name": "test",
-    "members": [1, 2, 3],
-    "public": false
+    "name": "testfffff",
+    "members": [1, 2 ,4, 3],
+    "public": true
 }
 
 ### get chat list
