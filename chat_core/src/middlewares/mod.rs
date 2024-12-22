@@ -1,11 +1,13 @@
 mod auth;
 mod request_id;
 mod server_time;
+
 use std::fmt;
 
+use crate::User;
+
+use self::{request_id::set_request_id, server_time::ServerTimeLayer};
 use axum::{middleware::from_fn, Router};
-use request_id::set_request_id;
-use server_time::ServerTimeLayer;
 use tower::ServiceBuilder;
 use tower_http::{
     compression::CompressionLayer,
@@ -16,17 +18,15 @@ use tracing::Level;
 
 pub use auth::verify_token;
 
-use crate::User;
-
-const REQUEST_ID_HEADER: &str = "x-request-id";
-const SERVER_TIME_HEADER: &str = "x-server-time";
-
 pub trait TokenVerify {
     type Error: fmt::Debug;
     fn verify(&self, token: &str) -> Result<User, Self::Error>;
 }
 
-pub fn setup_layer(app: Router) -> Router {
+const REQUEST_ID_HEADER: &str = "x-request-id";
+const SERVER_TIME_HEADER: &str = "x-server-time";
+
+pub fn set_layer(app: Router) -> Router {
     app.layer(
         ServiceBuilder::new()
             .layer(

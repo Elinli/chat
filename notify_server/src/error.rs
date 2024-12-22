@@ -1,11 +1,8 @@
 use axum::http::StatusCode;
 use axum::response::Json;
 use axum::response::{IntoResponse, Response};
-use jwt_simple::prelude::*;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
-
-
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ErrorOutput {

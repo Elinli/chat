@@ -29,8 +29,8 @@ impl AppConfig {
     pub fn load() -> Result<Self> {
         // read from user/etc/config/app.yaml or ./app.yaml or fron env chat_config
         let ret = match (
-            File::open("app.yml"),
-            File::open("/etc/config/app.yml"),
+            File::open("chat.yml"),
+            File::open("/etc/config/chat.yml"),
             std::env::var("CHAT_CONFIG"),
         ) {
             (Ok(reader), _, _) => serde_yaml::from_reader(reader),

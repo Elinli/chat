@@ -1,21 +1,20 @@
+use crate::{AppError, AppState, CreateChat};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::IntoResponse,
     Extension, Json,
 };
+use chat_core::User;
 
-use crate::{models::CreateChat, AppError, AppState, User};
-
-// list
 pub(crate) async fn list_chat_handler(
     Extension(user): Extension<User>,
     State(state): State<AppState>,
 ) -> Result<impl IntoResponse, AppError> {
-    let chat = state.fetch_chats_by_ws_id(user.ws_id as _).await?;
+    let chat = state.fetch_chats(user.ws_id as _).await?;
     Ok((StatusCode::OK, Json(chat)))
 }
-// create
+
 pub(crate) async fn create_chat_handler(
     Extension(user): Extension<User>,
     State(state): State<AppState>,
@@ -32,14 +31,16 @@ pub(crate) async fn get_chat_handler(
     let chat = state.get_chat_by_id(id as _).await?;
     match chat {
         Some(chat) => Ok(Json(chat)),
-        None => Err(AppError::NotFound(format!("Chat not found {id}"))),
+        None => Err(AppError::NotFound(format!("chat id {id}"))),
     }
 }
-// update
+
+// TODO: finish this as a homework
 pub(crate) async fn update_chat_handler() -> impl IntoResponse {
-    "update chat".to_string()
+    "update chat"
 }
-// delete
+
+// TODO: finish this as a homework
 pub(crate) async fn delete_chat_handler() -> impl IntoResponse {
-    "delete chat".to_string()
+    "delete chat"
 }

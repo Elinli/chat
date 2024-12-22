@@ -1,5 +1,4 @@
 use crate::{AppError, AppState};
-
 use chat_core::{Chat, ChatType};
 use serde::{Deserialize, Serialize};
 
@@ -62,7 +61,7 @@ impl AppState {
         Ok(chat)
     }
 
-    pub async fn fetch_chats_by_ws_id(&self, ws_id: u64) -> Result<Vec<Chat>, AppError> {
+    pub async fn fetch_chats(&self, ws_id: u64) -> Result<Vec<Chat>, AppError> {
         let chats = sqlx::query_as(
             r#"
             SELECT id, ws_id, name, type, members, created_at
@@ -95,9 +94,9 @@ impl AppState {
     pub async fn is_chat_member(&self, chat_id: u64, user_id: u64) -> Result<bool, AppError> {
         let is_member = sqlx::query(
             r#"
-                SELECT 1
-                FROM chats
-                WHERE id = $1 AND $2 = ANY(members)
+            SELECT 1
+            FROM chats
+            WHERE id = $1 AND $2 = ANY(members)
             "#,
         )
         .bind(chat_id as i64)
@@ -171,18 +170,17 @@ mod tests {
         assert_eq!(chat.name.unwrap(), "general");
         assert_eq!(chat.ws_id, 1);
         assert_eq!(chat.members.len(), 5);
+
         Ok(())
     }
 
     #[tokio::test]
     async fn chat_fetch_all_should_work() -> Result<()> {
         let (_tdb, state) = AppState::new_for_test().await?;
-        let chats = state
-            .fetch_chats_by_ws_id(1)
-            .await
-            .expect("fetch all chats failed");
+        let chats = state.fetch_chats(1).await.expect("fetch all chats failed");
 
         assert_eq!(chats.len(), 4);
+
         Ok(())
     }
 
@@ -206,5 +204,4 @@ mod tests {
 
         Ok(())
     }
-    
 }

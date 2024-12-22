@@ -5,7 +5,7 @@ mod middlewares;
 mod models;
 
 use anyhow::Context;
-use chat_core::{middlewares::{setup_layer, verify_token, TokenVerify}, DecodingKey, EncodingKeyPair, User};
+use chat_core::{middlewares::{set_layer, verify_token, TokenVerify}, DecodingKey, EncodingKeyPair, User};
 use handlers::*;
 use middlewares::verify_chat;
 use sqlx::PgPool;
@@ -25,21 +25,19 @@ use axum::{
 pub use config::AppConfig;
 
 #[derive(Debug, Clone)]
-pub(crate) struct AppState {
+pub struct AppState {
     inner: Arc<AppStateInner>,
 }
 
 #[allow(unused)]
-pub(crate) struct AppStateInner {
-    pub(crate) config: AppConfig,
+pub struct AppStateInner {
+    pub config: AppConfig,
     pub(crate) dk: DecodingKey,
     pub(crate) ek: EncodingKeyPair,
     pub(crate) pool: PgPool,
 }
 
-pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
-    let state = AppState::try_new(config).await?;
-
+pub async fn get_router(state: AppState) -> Result<Router, AppError> {
     let chat = Router::new()
         .route(
             "/:id",
@@ -54,11 +52,11 @@ pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
 
     let api = Router::new()
         .route("/users", get(list_chat_users_handler))
-        .route("/allusers", get(list_all_users_handler))
         .nest("/chats", chat)
-        .route("/upload", post(upload_file_handler))
-        .route("/files/:ws_id/*path", get(download_file_handler))
+        .route("/upload", post(upload_handler))
+        .route("/files/:ws_id/*path", get(file_handler))
         .layer(from_fn_with_state(state.clone(), verify_token::<AppState>))
+        // routes doesn't need token verification
         .route("/signin", post(signin_handler))
         .route("/signup", post(signup_handler));
 
@@ -66,7 +64,8 @@ pub async fn get_router(config: AppConfig) -> Result<Router, AppError> {
         .route("/", get(index_handler))
         .nest("/api", api)
         .with_state(state);
-    Ok(setup_layer(app))
+
+    Ok(set_layer(app))
 }
 
 // 当我调用 state.config => state.inner.config
@@ -91,19 +90,16 @@ impl AppState {
         fs::create_dir_all(&config.server.base_dir)
             .await
             .context("create base_dir failed")?;
-
-        let dk = DecodingKey::load(&config.auth.pk).context("load public key failed")?;
-
-        let ek = EncodingKeyPair::load(&config.auth.sk).context("load private key failed")?;
-
+        let dk = DecodingKey::load(&config.auth.pk).context("load pk failed")?;
+        let ek = EncodingKeyPair::load(&config.auth.sk).context("load sk failed")?;
         let pool = PgPool::connect(&config.server.db_url)
             .await
-            .context("connect db failed")?;
+            .context("connect to db failed")?;
         Ok(Self {
             inner: Arc::new(AppStateInner {
                 config,
-                dk,
                 ek,
+                dk,
                 pool,
             }),
         })
@@ -118,7 +114,7 @@ impl fmt::Debug for AppStateInner {
     }
 }
 
-#[cfg(test)]
+#[cfg(feature = "test-util")]
 mod test_util {
     use super::*;
     use sqlx::{Executor, PgPool};
@@ -127,17 +123,11 @@ mod test_util {
     impl AppState {
         pub async fn new_for_test() -> Result<(TestPg, Self), AppError> {
             let config = AppConfig::load()?;
-
             let dk = DecodingKey::load(&config.auth.pk).context("load pk failed")?;
-
             let ek = EncodingKeyPair::load(&config.auth.sk).context("load sk failed")?;
-
             let post = config.server.db_url.rfind('/').expect("invalid db_url");
-
             let server_url = &config.server.db_url[..post];
-
             let (tdb, pool) = get_test_pool(Some(server_url)).await;
-
             let state = Self {
                 inner: Arc::new(AppStateInner {
                     config,
@@ -152,14 +142,14 @@ mod test_util {
 
     pub async fn get_test_pool(url: Option<&str>) -> (TestPg, PgPool) {
         let url = match url {
-            Some(u) => u.to_string(),
-            None => "postgres://postgres:admin@localhost:5432".to_string(),
+            Some(url) => url.to_string(),
+            None => "postgres://postgres:postgres@localhost:5432".to_string(),
         };
-
         let tdb = TestPg::new(url, std::path::Path::new("../migrations"));
         let pool = tdb.get_pool().await;
 
-        let sql = include_str!("../sql/test.sql").split(";");
+        // run prepared sql to insert test dat
+        let sql = include_str!("../sql/test.sql").split(';');
         let mut ts = pool.begin().await.expect("begin transaction failed");
         for s in sql {
             if s.trim().is_empty() {
@@ -167,7 +157,8 @@ mod test_util {
             }
             ts.execute(s).await.expect("execute sql failed");
         }
-        ts.commit().await.expect("commit failed");
+        ts.commit().await.expect("commit transaction failed");
+
         (tdb, pool)
     }
 }

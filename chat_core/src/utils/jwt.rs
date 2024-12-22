@@ -19,11 +19,9 @@ impl EncodingKeyPair {
     }
 
     pub fn sign(&self, user: impl Into<User>) -> Result<String, AppError> {
-        let claims =
-            Claims::with_custom_claims(user.into(), Duration::from_secs(JWT_DURATION as u64))
-                .with_issuer(JWT_ISSUER)
-                .with_audience(JWT_AUDIENCE);
-        Ok(self.0.sign(claims)?)
+        let claims = Claims::with_custom_claims(user.into(), Duration::from_secs(JWT_DURATION));
+        let claims = claims.with_issuer(JWT_ISSUER).with_audience(JWT_AUDIENCE);
+        self.0.sign(claims)
     }
 }
 
@@ -47,20 +45,22 @@ impl DecodingKey {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use anyhow::Result;
 
-    use super::*;
-
     #[tokio::test]
-    async fn sign_and_verify_should_work() -> Result<()> {
-        let encoding_key = EncodingKeyPair::load(include_str!("../../fixtures/private.pem"))?;
-        let decoding_key = DecodingKey::load(include_str!("../../fixtures/public.pem"))?;
-        let user = User::new(1, "elixy@qq.com", "Eli Shi");
-        let token = encoding_key.sign(user.clone())?;
+    async fn jwt_sign_verify_should_work() -> Result<()> {
+        let encoding_pem = include_str!("../../fixtures/private.pem");
+        let decoding_pem = include_str!("../../fixtures/public.pem");
+        let ek = EncodingKeyPair::load(encoding_pem)?;
+        let dk = DecodingKey::load(decoding_pem)?;
 
-        let user2 = decoding_key.verify(&token)?;
-        assert_eq!(user.email, "elixy@qq.com");
-        assert_eq!(user2.email, user.email);
+        let user = User::new(1, "Tyr Chen", "tchen@acme.org");
+
+        let token = ek.sign(user.clone())?;
+        let user2 = dk.verify(&token)?;
+
+        assert_eq!(user, user2);
         Ok(())
     }
 }

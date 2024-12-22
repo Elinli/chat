@@ -1,3 +1,4 @@
+use super::TokenVerify;
 use axum::{
     extract::{FromRequestParts, Query, Request, State},
     http::StatusCode,
@@ -11,10 +12,8 @@ use axum_extra::{
 use serde::Deserialize;
 use tracing::warn;
 
-use super::TokenVerify;
-
 #[derive(Debug, Deserialize)]
-pub struct Params {
+struct Params {
     access_token: String,
 }
 
@@ -62,13 +61,11 @@ where
 
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-
-    use crate::{DecodingKey, EncodingKeyPair, User};
-
     use super::*;
+    use crate::{DecodingKey, EncodingKeyPair, User};
     use anyhow::Result;
     use axum::{body::Body, middleware::from_fn_with_state, routing::get, Router};
+    use std::sync::Arc;
     use tower::ServiceExt;
 
     #[derive(Clone)]
@@ -92,29 +89,27 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_auth_middleware() -> Result<()> {
+    async fn verify_token_middleware_should_work() -> Result<()> {
         let encoding_pem = include_str!("../../fixtures/private.pem");
         let decoding_pem = include_str!("../../fixtures/public.pem");
         let ek = EncodingKeyPair::load(encoding_pem)?;
         let dk = DecodingKey::load(decoding_pem)?;
         let state = AppState(Arc::new(AppStateInner { ek, dk }));
 
-        let user = User::new(1, "elixy111@qq.com", "Eli Shi");
-
+        let user = User::new(1, "Tyr Chen", "tchen@acme.org");
         let token = state.0.ek.sign(user)?;
 
         let app = Router::new()
             .route("/", get(handler))
-            .layer(from_fn_with_state(state.clone(), verify_token::<AppState>));
+            .layer(from_fn_with_state(state.clone(), verify_token::<AppState>))
+            .with_state(state);
 
+        // good token
         let req = Request::builder()
             .uri("/")
             .header("Authorization", format!("Bearer {}", token))
-            .body(Body::empty())
-            .unwrap();
-
+            .body(Body::empty())?;
         let res = app.clone().oneshot(req).await?;
-
         assert_eq!(res.status(), StatusCode::OK);
 
         // good token in query params
@@ -124,15 +119,22 @@ mod tests {
         let res = app.clone().oneshot(req).await?;
         assert_eq!(res.status(), StatusCode::OK);
 
-        // with no token
+        // no token
         let req = Request::builder().uri("/").body(Body::empty())?;
         let res = app.clone().oneshot(req).await?;
         assert_eq!(res.status(), StatusCode::UNAUTHORIZED);
 
-        // with bad token
+        // bad token
         let req = Request::builder()
             .uri("/")
             .header("Authorization", "Bearer bad-token")
+            .body(Body::empty())?;
+        let res = app.clone().oneshot(req).await?;
+        assert_eq!(res.status(), StatusCode::FORBIDDEN);
+
+        // bad token in query params
+        let req = Request::builder()
+            .uri("/?access_token=bad-token")
             .body(Body::empty())?;
         let res = app.oneshot(req).await?;
         assert_eq!(res.status(), StatusCode::FORBIDDEN);

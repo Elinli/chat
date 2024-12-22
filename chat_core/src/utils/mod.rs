@@ -1,4 +1,3 @@
 mod jwt;
 
-pub use jwt::DecodingKey;
-pub use jwt::EncodingKeyPair;
+pub use jwt::{DecodingKey, EncodingKeyPair};

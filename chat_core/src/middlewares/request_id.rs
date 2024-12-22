@@ -1,9 +1,10 @@
+use super::REQUEST_ID_HEADER;
 use axum::{extract::Request, http::HeaderValue, middleware::Next, response::Response};
 use tracing::warn;
 
-use super::REQUEST_ID_HEADER;
-
 pub async fn set_request_id(mut req: Request, next: Next) -> Response {
+    // if x-request-id exists, do nothing, otherwise generate a new one
+
     let id = match req.headers().get(REQUEST_ID_HEADER) {
         Some(v) => Some(v.clone()),
         None => {
@@ -14,13 +15,15 @@ pub async fn set_request_id(mut req: Request, next: Next) -> Response {
                     Some(v)
                 }
                 Err(e) => {
-                    warn!("Failed to generate request id: {}", e);
+                    warn!("parse generated request id failed: {}", e);
                     None
                 }
             }
         }
     };
+
     let mut res = next.run(req).await;
+
     let Some(id) = id else {
         return res;
     };

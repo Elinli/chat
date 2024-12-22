@@ -3,19 +3,16 @@ use std::{
     str::FromStr,
 };
 
+use crate::{AppError, ChatFile};
 use sha1::{Digest, Sha1};
-
-use crate::AppError;
-
-use super::ChatFile;
 
 impl ChatFile {
     pub fn new(ws_id: u64, filename: &str, data: &[u8]) -> Self {
         let hash = Sha1::digest(data);
         Self {
+            ws_id,
             ext: filename.split('.').last().unwrap_or("txt").to_string(),
             hash: hex::encode(hash),
-            ws_id: ws_id,
         }
     }
 
@@ -23,17 +20,15 @@ impl ChatFile {
         format!("/files/{}", self.hash_to_path())
     }
 
-    pub fn path(&self, base_url: &Path) -> PathBuf {
-        base_url.join(self.hash_to_path())
+    pub fn path(&self, base_dir: &Path) -> PathBuf {
+        base_dir.join(self.hash_to_path())
     }
-    pub fn hash_to_path(&self) -> String {
-        let (first_part, second_part) = self.hash.split_at(6);
-        let (second_part, third_part) = second_part.split_at(6);
 
-        format!(
-            "{}/{}/{}/{}.{}",
-            self.ws_id, first_part, second_part, third_part, self.ext
-        )
+    // split hash into 3 parts, first 2 with 3 chars
+    fn hash_to_path(&self) -> String {
+        let (part1, part2) = self.hash.split_at(3);
+        let (part2, part3) = part2.split_at(3);
+        format!("{}/{}/{}/{}.{}", self.ws_id, part1, part2, part3, self.ext)
     }
 }
 
@@ -52,8 +47,8 @@ impl FromStr for ChatFile {
         let parts: Vec<&str> = s.split('/').collect();
         if parts.len() != 4 {
             return Err(AppError::ChatFileError(format!(
-                "File path {} does not valid {:?}",
-                s, parts
+                "File path {} does not valid",
+                s
             )));
         }
 
@@ -85,9 +80,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_chat_file_new() {
-        let file = ChatFile::new(1, "test.txt", b"hello");
+    fn chat_file_new_should_work() {
+        let file = ChatFile::new(1, "test.txt", b"hello world");
+        assert_eq!(file.ws_id, 1);
         assert_eq!(file.ext, "txt");
-        assert_eq!(file.hash, "aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434d");
+        assert_eq!(file.hash, "2aae6c35c94fcfb415dbe95f408b9ce91ee846ed");
     }
 }

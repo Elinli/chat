@@ -1,11 +1,12 @@
-pub mod middlewares;
 mod utils;
-pub use utils::*;
+
+pub mod middlewares;
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
+pub use utils::*;
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq)]
 pub struct User {
@@ -17,18 +18,6 @@ pub struct User {
     #[serde(skip)]
     pub password_hash: Option<String>,
     pub created_at: DateTime<Utc>,
-}
-impl User {
-    pub fn new(id: u64, fullname: &str, email: &str) -> Self {
-        Self {
-            id: id as i64,
-            ws_id: 0 as i64,
-            fullname: fullname.to_string(),
-            email: email.to_string(),
-            password_hash: None,
-            created_at: Utc::now(),
-        }
-    }
 }
 
 #[derive(Debug, Clone, FromRow, Serialize, Deserialize, PartialEq)]
@@ -74,4 +63,17 @@ pub struct Message {
     pub content: String,
     pub files: Vec<String>,
     pub created_at: DateTime<Utc>,
+}
+
+impl User {
+    pub fn new(id: i64, fullname: &str, email: &str) -> Self {
+        Self {
+            id,
+            ws_id: 0,
+            fullname: fullname.to_string(),
+            email: email.to_string(),
+            password_hash: None,
+            created_at: chrono::Utc::now(),
+        }
+    }
 }
