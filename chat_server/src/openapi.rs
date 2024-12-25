@@ -8,13 +8,11 @@ use utoipa::{
     openapi::security::{HttpAuthScheme, HttpBuilder, SecurityScheme},
     Modify, OpenApi,
 };
-use utoipa_axum::router::OpenApiRouter;
-
 use utoipa_rapidoc::RapiDoc;
 use utoipa_redoc::{Redoc, Servable};
 use utoipa_swagger_ui::SwaggerUi;
 
-pub(crate) trait OpenApiCustomRouter {
+pub(crate) trait OpenApiRouter {
     fn openapi(self) -> Self;
 }
 
@@ -27,6 +25,8 @@ pub(crate) trait OpenApiCustomRouter {
             create_chat_handler,
             get_chat_handler,
             list_message_handler,
+            send_message_handler,
+            list_chat_users_handler,
         ),
         components(
             schemas(User, Chat, ChatType, ChatUser, Message, Workspace, SigninUser, CreateUser, CreateChat, CreateMessage, ListMessages, AuthOutput, ErrorOutput),
@@ -51,7 +51,7 @@ impl Modify for SecurityAddon {
     }
 }
 
-impl OpenApiCustomRouter for Router<AppState> {
+impl OpenApiRouter for Router<AppState> {
     fn openapi(self) -> Self {
         self.merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
             .merge(Redoc::with_url("/redoc", ApiDoc::openapi()))
